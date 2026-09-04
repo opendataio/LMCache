@@ -60,6 +60,7 @@ pipeline {
             steps {
                 writeGithubStatus('pending', 'Tests running...')
                 sh """
+                    set -o pipefail
                     cd repo
                     bash .jenkins/run_tests.sh 2>&1 | tee \${WORKSPACE}/test_output.txt
                 """
