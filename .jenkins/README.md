@@ -37,6 +37,45 @@ Jenkinsfile.poller        Jenkinsfile.webhook
 
 `Jenkinsfile.test` is shared between both modes — only the trigger mechanism differs.
 
+## Spinning up Jenkins
+
+A Docker-based Jenkins instance is provided under `docker/`. Plugins are pre-installed
+at image build time via `docker/plugins.txt` — no manual plugin installation needed.
+
+**Requirements:** Docker, Docker Compose
+
+```bash
+cd .jenkins/docker
+docker-compose build      # builds image and installs all plugins from plugins.txt
+docker-compose up -d      # starts Jenkins at http://localhost:8080
+```
+
+Default credentials: `admin` / `admin`
+
+**Configure the GitHub PAT** (one-time, persisted in the Jenkins volume):
+
+1. Go to **Manage Jenkins → Credentials → System → Global → Add Credentials**
+2. Kind: `Secret text`
+3. ID: `GITHUB_PAT`
+4. Secret: a GitHub PAT with `repo:status` and `public_repo` scopes
+5. Save
+
+**Plugins installed by `docker/plugins.txt`:**
+
+| Plugin | Purpose |
+|--------|---------|
+| `workflow-aggregator` | Core Pipeline support |
+| `pipeline-utility-steps` | `readJSON`, `fileExists` |
+| `ws-cleanup` | `cleanWs()` |
+| `rebuild` | Re-run a build with same parameters |
+| `credentials` + `credentials-binding` | Secure secret injection |
+| `configuration-as-code` | Jenkins config as code (casc.yaml) |
+| `generic-webhook-trigger` | Webhook-based triggering (external mode) |
+| `github` | GitHub integration |
+| `git` | Source checkout |
+
+To add a plugin: append it to `docker/plugins.txt` and rebuild the image.
+
 ## Two deployment modes
 
 ### Internal Jenkins (polling)
