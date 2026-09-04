@@ -90,12 +90,12 @@ pipeline {
             )
             postPrComment(""":white_check_mark: **RBLN tests passed**
 - Capability: \`${env.TEST_CAPABILITY}\`
-- Duration: ${env.TEST_DURATION}s
-- Build: ${env.BUILD_URL}""")
+- Workload: smoke
+- Duration: ${env.TEST_DURATION}s""")
         }
         failure {
             writeGithubStatus('failure', 'Tests failed — see logs for details')
-            postPrComment(""":x: **RBLN tests failed** — [see logs](${env.BUILD_URL})""")
+            postPrComment(""":x: **RBLN tests failed** — contact the RBLN team for logs""")
         }
         aborted {
             writeGithubStatus('failure', 'Build aborted or approval timed out')
@@ -123,7 +123,6 @@ def postPrComment(String body) {
 }
 
 def writeGithubStatus(String state, String description) {
-    def buildUrl      = env.BUILD_URL      ?: ''
     def statusContext = env.STATUS_CONTEXT ?: ''
     sh """
         curl -sf -X POST \
@@ -134,8 +133,7 @@ def writeGithubStatus(String state, String description) {
           -d '{
             "state":       "${state}",
             "context":     "${statusContext}",
-            "description": "${description}",
-            "target_url":  "${buildUrl}"
+            "description": "${description}"
           }'
     """
 }
