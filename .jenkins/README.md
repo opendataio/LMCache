@@ -12,33 +12,27 @@ This directory provides a POC implementation of that design.
 ## Architecture
 
 ```
-                         GitHub (LMCache)
-                         PR + 'rbln' label added
-                                    │
-              ┌─────────────────────┴──────────────────────┐
-              │                                            │
-    Jenkins on internal network              Jenkins with public URL
-    GitHub cannot push to it                GitHub can push to it
-              │                                            │
-    Jenkinsfile.poller                      Jenkinsfile.webhook
-    polls GitHub API every 5 min            receives webhook instantly
-              │                                            │
-              └─────────────────────┬──────────────────────┘
-                                    │ trigger (with COMMIT_SHA, PR_NUMBER)
-                                    ▼
-                            lmcache-rbln-test
-                            (Jenkinsfile.test)
-                        ┌───────────────────────┐
-                        │ 1. post 'pending'      │
-                        │ 2. human approval gate │
-                        │ 3. git checkout SHA    │
-                        │ 4. run_tests.sh        │
-                        │ 5. post results        │
-                        └───────────┬───────────┘
-                                    │
-                                    ▼
-                         GitHub PR (commit status
-                         + comment with test output)
+           GitHub (LMCache)
+           PR + '<x>' label
+                   │
+      ┌────────────┴────────────┐
+      │                         │
+Internal Jenkins          External Jenkins
+Jenkinsfile.poller        Jenkinsfile.webhook
+(polls every 5 min)       (Generic Webhook Trigger)
+      │                         │
+      └────────────┬────────────┘
+                   │ trigger
+                   ▼
+          lmcache-rbln-test
+          (Jenkinsfile.test)
+       ┌──────────────────────┐
+       │ approval → test      │
+       │ → report results     │
+       └──────────┬───────────┘
+                  │
+           GitHub PR status
+           + comment
 ```
 
 `Jenkinsfile.test` is shared between both modes — only the trigger mechanism differs.
