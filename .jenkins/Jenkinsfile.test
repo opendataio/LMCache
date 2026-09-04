@@ -103,17 +103,19 @@ pipeline {
 }
 
 def writeGithubStatus(String state, String description) {
+    def buildUrl      = env.BUILD_URL      ?: ''
+    def statusContext = env.STATUS_CONTEXT ?: ''
     sh """
-        curl -s -X POST \
+        curl -sf -X POST \
           -H "Authorization: Bearer \${GITHUB_TOKEN}" \
           -H "Accept: application/vnd.github+json" \
           -H "Content-Type: application/json" \
           "https://api.github.com/repos/\${GITHUB_REPO}/statuses/\${COMMIT_SHA}" \
           -d '{
             "state":       "${state}",
-            "context":     "\${STATUS_CONTEXT}",
+            "context":     "${statusContext}",
             "description": "${description}",
-            "target_url":  "\${BUILD_URL}"
+            "target_url":  "${buildUrl}"
           }'
     """
 }
