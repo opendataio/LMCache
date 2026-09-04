@@ -15,7 +15,7 @@ pipeline {
     }
 
     environment {
-        GITHUB_TOKEN = credentials('github-pat')
+        GITHUB_TOKEN = credentials('GITHUB_PAT')
         GITHUB_REPO  = 'opendataio/LMCache'
         TARGET_LABEL = 'rbln'
         // File that records already-triggered SHAs to avoid duplicate runs

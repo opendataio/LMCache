@@ -16,7 +16,7 @@ pipeline {
     }
 
     environment {
-        GITHUB_TOKEN   = credentials('github-pat')
+        GITHUB_TOKEN   = credentials('GITHUB_PAT')
         GITHUB_REPO    = 'opendataio/LMCache'
         STATUS_CONTEXT = 'jenkins/rbln'
     }
