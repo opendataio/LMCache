@@ -12,7 +12,7 @@ This directory provides a POC implementation of that design.
 ## Architecture
 
 ```
-                         GitHub (opendataio/LMCache)
+                         GitHub (LMCache/LMCache)
                          PR + 'rbln' label added
                                     │
               ┌─────────────────────┴──────────────────────┐
@@ -88,7 +88,7 @@ Use when Jenkins has a public URL and GitHub can push events directly.
 
 ## Validated
 
-End-to-end pipeline verified on [opendataio/LMCache#1](https://github.com/opendataio/LMCache/pull/1):
+End-to-end pipeline verified on [LMCache/LMCache#1](https://github.com/LMCache/LMCache/pull/1):
 poller detected the labelled PR, triggered the test job, approval flowed through,
 and results were posted back as both a commit status and a PR comment.
 
