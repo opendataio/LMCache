@@ -91,7 +91,7 @@ pipeline {
                 "Tests passed on ${env.TEST_CAPABILITY} in ${env.TEST_DURATION}s"
             )
             postPrComment(""":white_check_mark: **RBLN tests passed**
-- Capability: \`${env.TEST_CAPABILITY}\`
+- Capability: `${env.TEST_CAPABILITY}`
 - Workload: smoke
 - Duration: ${env.TEST_DURATION}s""")
         }
