@@ -88,18 +88,38 @@ pipeline {
                 'success',
                 "Tests passed on ${env.TEST_CAPABILITY} in ${env.TEST_DURATION}s"
             )
+            postPrComment(""":white_check_mark: **RBLN tests passed**
+- Capability: \`${env.TEST_CAPABILITY}\`
+- Duration: ${env.TEST_DURATION}s
+- Build: ${env.BUILD_URL}""")
         }
         failure {
             writeGithubStatus('failure', 'Tests failed — see logs for details')
+            postPrComment(""":x: **RBLN tests failed** — [see logs](${env.BUILD_URL})""")
         }
         aborted {
             writeGithubStatus('failure', 'Build aborted or approval timed out')
+            postPrComment(""":warning: **RBLN tests aborted or approval timed out**""")
         }
         always {
             archiveArtifacts artifacts: 'test_output.txt, repo/result.json',
                              allowEmptyArchive: true
         }
     }
+}
+
+def postPrComment(String body) {
+    def prNumber = env.PR_NUMBER ?: ''
+    if (!prNumber) { return }
+    def escapedBody = body.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
+    sh """
+        curl -sf -X POST \
+          -H "Authorization: Bearer \${GITHUB_TOKEN}" \
+          -H "Accept: application/vnd.github+json" \
+          -H "Content-Type: application/json" \
+          "https://api.github.com/repos/\${GITHUB_REPO}/issues/${prNumber}/comments" \
+          -d "{\\"body\\": \\"${escapedBody}\\"}"
+    """
 }
 
 def writeGithubStatus(String state, String description) {
