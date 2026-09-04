@@ -74,9 +74,11 @@ pipeline {
                     }
                     def result = readJSON file: 'repo/result.json'
                     echo "Result: ${result}"
-                    env.TEST_STATUS     = result.status
-                    env.TEST_DURATION   = result.duration_seconds.toString()
-                    env.TEST_CAPABILITY = result.capability
+                    env.TEST_STATUS       = result.status
+                    env.TEST_DURATION     = result.duration_seconds.toString()
+                    env.TEST_CAPABILITY   = result.capability
+                    env.TEST_FAILED_TESTS = result.failed_tests ? result.failed_tests.join('\n') : ''
+                    env.TEST_ERROR_SUMMARY = result.error_summary ?: ''
                 }
             }
         }
@@ -95,7 +97,12 @@ pipeline {
         }
         failure {
             writeGithubStatus('failure', 'Tests failed — see logs for details')
-            postPrComment(""":x: **RBLN tests failed** — contact the RBLN team for logs""")
+            script {
+                def failedList = env.TEST_FAILED_TESTS ? "\n**Failed tests:**\n```\n${env.TEST_FAILED_TESTS}\n```" : ''
+                def errSummary = env.TEST_ERROR_SUMMARY ? "\n**Error summary:**\n```\n${env.TEST_ERROR_SUMMARY}\n```" : ''
+                postPrComment(""":x: **RBLN tests failed**${failedList}${errSummary}
+Contact the RBLN team for full logs.""")
+            }
         }
         aborted {
             writeGithubStatus('failure', 'Build aborted or approval timed out')
