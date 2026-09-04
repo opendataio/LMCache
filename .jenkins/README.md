@@ -37,6 +37,41 @@ Jenkinsfile.poller        Jenkinsfile.webhook
 
 `Jenkinsfile.test` is shared between both modes — only the trigger mechanism differs.
 
+## Two deployment modes
+
+### Internal Jenkins (polling)
+
+Use when Jenkins is on an internal network that GitHub cannot reach.
+
+| File | Role |
+|------|------|
+| `Jenkinsfile.poller` | Polls GitHub API every 5 min for PRs labelled `rbln`, triggers test job on new SHAs |
+| `Jenkinsfile.test` | Runs on triggered SHA: approval gate → checkout → tests → report |
+
+**Setup:**
+1. Jenkins credential ID `GITHUB_PAT` — PAT with `repo:status` and `public_repo` scopes
+2. Create Pipeline job `lmcache-rbln-poller` → Script Path: `.jenkins/Jenkinsfile.poller`
+3. Create Pipeline job `lmcache-rbln-test` → Script Path: `.jenkins/Jenkinsfile.test`
+4. Install plugins: Pipeline Utility Steps, Workspace Cleanup, Rebuild
+
+### External Jenkins (webhook)
+
+Use when Jenkins has a public URL and GitHub can push events directly.
+
+| File | Role |
+|------|------|
+| `Jenkinsfile.webhook` | Receives GitHub `pull_request` webhook, triggers test job immediately |
+| `Jenkinsfile.test` | Same as above — shared between both modes |
+
+**Setup:**
+1. Same credential and `lmcache-rbln-test` job as above
+2. Install additional plugins: Generic Webhook Trigger, Rebuild
+3. Create Pipeline job `lmcache-rbln-webhook` → Script Path: `.jenkins/Jenkinsfile.webhook`
+4. Add GitHub webhook on the repo:
+   - Payload URL: `https://<jenkins-host>/generic-webhook-trigger/invoke?token=rbln-webhook-secret`
+   - Content type: `application/json`
+   - Events: Pull requests
+
 ## Spinning up Jenkins
 
 A Docker-based Jenkins instance is provided under `docker/`. Plugins are pre-installed
@@ -75,41 +110,6 @@ Default credentials: `admin` / `admin`
 | `git` | Source checkout |
 
 To add a plugin: append it to `docker/plugins.txt` and rebuild the image.
-
-## Two deployment modes
-
-### Internal Jenkins (polling)
-
-Use when Jenkins is on an internal network that GitHub cannot reach.
-
-| File | Role |
-|------|------|
-| `Jenkinsfile.poller` | Polls GitHub API every 5 min for PRs labelled `rbln`, triggers test job on new SHAs |
-| `Jenkinsfile.test` | Runs on triggered SHA: approval gate → checkout → tests → report |
-
-**Setup:**
-1. Jenkins credential ID `GITHUB_PAT` — PAT with `repo:status` and `public_repo` scopes
-2. Create Pipeline job `lmcache-rbln-poller` → Script Path: `.jenkins/Jenkinsfile.poller`
-3. Create Pipeline job `lmcache-rbln-test` → Script Path: `.jenkins/Jenkinsfile.test`
-4. Install plugins: Pipeline Utility Steps, Workspace Cleanup, Rebuild
-
-### External Jenkins (webhook)
-
-Use when Jenkins has a public URL and GitHub can push events directly.
-
-| File | Role |
-|------|------|
-| `Jenkinsfile.webhook` | Receives GitHub `pull_request` webhook, triggers test job immediately |
-| `Jenkinsfile.test` | Same as above — shared between both modes |
-
-**Setup:**
-1. Same credential and `lmcache-rbln-test` job as above
-2. Install additional plugins: Generic Webhook Trigger, Rebuild
-3. Create Pipeline job `lmcache-rbln-webhook` → Script Path: `.jenkins/Jenkinsfile.webhook`
-4. Add GitHub webhook on the repo:
-   - Payload URL: `https://<jenkins-host>/generic-webhook-trigger/invoke?token=rbln-webhook-secret`
-   - Content type: `application/json`
-   - Events: Pull requests
 
 ## Current features
 
