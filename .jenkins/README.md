@@ -9,12 +9,39 @@ reach them directly, and a human approval gate is required before tests actually
 
 This directory provides a POC implementation of that design.
 
-## How it works
+## Architecture
 
-A PR author adds the `rbln` label to signal that RBLN tests are needed.
-Jenkins picks this up, posts a `pending` commit status, waits for a human to approve,
-then checks out the exact PR commit, runs the tests, and reports results back to the PR
-as both a commit status and a comment.
+```
+                         GitHub (opendataio/LMCache)
+                         PR + 'rbln' label added
+                                    │
+              ┌─────────────────────┴──────────────────────┐
+              │                                            │
+    Jenkins on internal network              Jenkins with public URL
+    GitHub cannot push to it                GitHub can push to it
+              │                                            │
+    Jenkinsfile.poller                      Jenkinsfile.webhook
+    polls GitHub API every 5 min  ◄──────── receives webhook instantly
+              │                                            │
+              └─────────────────────┬──────────────────────┘
+                                    │ trigger (with COMMIT_SHA, PR_NUMBER)
+                                    ▼
+                            lmcache-rbln-test
+                            (Jenkinsfile.test)
+                        ┌───────────────────────┐
+                        │ 1. post 'pending'      │
+                        │ 2. human approval gate │
+                        │ 3. git checkout SHA    │
+                        │ 4. run_tests.sh        │
+                        │ 5. post results        │
+                        └───────────┬───────────┘
+                                    │
+                                    ▼
+                         GitHub PR (commit status
+                         + comment with test output)
+```
+
+`Jenkinsfile.test` is shared between both modes — only the trigger mechanism differs.
 
 ## Two deployment modes
 
