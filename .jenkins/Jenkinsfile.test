@@ -1,10 +1,5 @@
-// Test job: triggered by lmcache-rbln-poller with a specific commit SHA.
-// Flow:
-//   1. Write 'pending' status to GitHub immediately
-//   2. Wait for a human to approve (RBLN team controls when tests actually run)
-//   3. Checkout the exact PR commit
-//   4. Run tests via run_tests.sh
-//   5. Parse result.json and write 'success' or 'failure' back to the PR
+// Test job: triggered by lmcache-rbln-poller (internal) or lmcache-rbln-webhook (external).
+// Requires human approval, then checks out the PR commit, runs tests, and posts results to GitHub.
 
 pipeline {
     agent any

@@ -1,0 +1,59 @@
+// External Jenkins: receives GitHub webhook, triggers lmcache-rbln-test (Jenkinsfile.test).
+// Replaces Jenkinsfile.poller when Jenkins has a public URL.
+//
+// Required plugin: Generic Webhook Trigger
+//
+// GitHub webhook setup (repo Settings -> Webhooks -> Add webhook):
+//   Payload URL:  https://<jenkins-host>/generic-webhook-trigger/invoke?token=rbln-webhook-secret
+//   Content type: application/json
+//   Events:       Pull requests
+
+pipeline {
+    agent any
+
+    triggers {
+        GenericTrigger(
+            genericVariables: [
+                [key: 'COMMIT_SHA', value: '$.pull_request.head.sha'],
+                [key: 'PR_NUMBER',  value: '$.pull_request.number'],
+                [key: 'PR_TITLE',   value: '$.pull_request.title'],
+                [key: 'ACTION',     value: '$.action'],
+                [key: 'LABEL_NAME', value: '$.label.name'],
+            ],
+            causeString: 'PR #$PR_NUMBER - $ACTION $LABEL_NAME',
+            token: 'rbln-webhook-secret',
+            regexpFilterText:  '$ACTION__$LABEL_NAME',
+            regexpFilterExpression: 'labeled__rbln'
+        )
+    }
+
+    environment {
+        GITHUB_TOKEN = credentials('GITHUB_PAT')
+        GITHUB_REPO  = 'opendataio/LMCache'
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Trigger RBLN test') {
+            steps {
+                script {
+                    echo "Webhook received: PR #${env.PR_NUMBER} '${env.PR_TITLE}' @ ${env.COMMIT_SHA.take(7)}"
+                    // 'lmcache-rbln-test' is a Jenkins Pipeline job configured with
+                    // Script Path: .jenkins/Jenkinsfile.test
+                    build job: 'lmcache-rbln-test',
+                          parameters: [
+                              string(name: 'COMMIT_SHA', value: env.COMMIT_SHA),
+                              string(name: 'PR_NUMBER',  value: env.PR_NUMBER),
+                              string(name: 'PR_TITLE',   value: env.PR_TITLE)
+                          ],
+                          wait: false
+                    echo "Triggered lmcache-rbln-test for PR #${env.PR_NUMBER}."
+                }
+            }
+        }
+    }
+}

@@ -1,16 +1,10 @@
-// Poller job: runs on a cron schedule, polls GitHub for open PRs with the
-// 'rbln' label, and triggers lmcache-rbln-test for each new commit SHA.
-//
-// Jenkins setup:
-//   1. Store your GitHub PAT in Jenkins Credentials with ID 'github-pat'
-//   2. Create a Pipeline job named 'lmcache-rbln-poller' pointing to this file
-//   3. Create a Pipeline job named 'lmcache-rbln-test' pointing to Jenkinsfile.test
+// Internal Jenkins: polls GitHub every 5 min for PRs labelled 'rbln',
+// triggers lmcache-rbln-test for each new commit SHA.
 
 pipeline {
     agent any
 
     triggers {
-        // Poll every 5 minutes; 'H' spreads load across the minute window
         cron('H/5 * * * *')
     }
 
@@ -18,7 +12,6 @@ pipeline {
         GITHUB_TOKEN = credentials('GITHUB_PAT')
         GITHUB_REPO  = 'opendataio/LMCache'
         TARGET_LABEL = 'rbln'
-        // File that records already-triggered SHAs to avoid duplicate runs
         SEEN_FILE    = '/var/jenkins_home/rbln-seen-shas.txt'
     }
 
@@ -33,7 +26,6 @@ pipeline {
                 script {
                     echo "Polling ${GITHUB_REPO} for open PRs labelled '${TARGET_LABEL}'..."
 
-                    // Fetch all open PRs (up to 100)
                     def response = sh(
                         script: """
                             curl -sf \
@@ -47,7 +39,6 @@ pipeline {
                     def prs = readJSON(text: response)
                     echo "Found ${prs.size()} open PR(s) total."
 
-                    // Load the list of SHAs we have already triggered
                     def seenShas = []
                     if (fileExists(SEEN_FILE)) {
                         seenShas = readFile(SEEN_FILE).trim().tokenize('\n').findAll { it }
@@ -56,7 +47,6 @@ pipeline {
                     int triggered = 0
 
                     prs.each { pr ->
-                        // Filter by label
                         def labelNames = pr.labels.collect { it.name as String }
                         if (!labelNames.contains(TARGET_LABEL)) {
                             return
@@ -73,6 +63,8 @@ pipeline {
 
                         echo "New: PR #${prNum} '${title}' @ ${sha[0..6]} — triggering test job."
 
+                        // 'lmcache-rbln-test' is a Jenkins Pipeline job configured with
+                        // Script Path: .jenkins/Jenkinsfile.test
                         build job: 'lmcache-rbln-test',
                               parameters: [
                                   string(name: 'COMMIT_SHA', value: sha),
