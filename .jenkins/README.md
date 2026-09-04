@@ -48,6 +48,18 @@ Use when Jenkins is on an internal network that GitHub cannot reach.
 | `Jenkinsfile.poller` | Polls GitHub API every 5 min for PRs labelled `rbln`, triggers test job on new SHAs |
 | `Jenkinsfile.test` | Runs on triggered SHA: approval gate → checkout → tests → report |
 
+**Deduplication:** each triggered commit SHA is appended to
+`/var/jenkins_home/rbln-seen-shas.txt` on the Jenkins host. On every poll cycle the
+poller reads this file and skips any SHA already recorded, so a PR is only triggered
+once per commit even if it still carries the label on subsequent polls.
+
+To re-trigger a specific SHA (e.g. for a re-run), either use **Build with Parameters**
+on `lmcache-rbln-test` directly, or remove the SHA from the file:
+```bash
+# inside the Jenkins container
+sed -i '/<sha>/d' /var/jenkins_home/rbln-seen-shas.txt
+```
+
 **Setup:**
 1. Jenkins credential ID `GITHUB_PAT` — PAT with `repo:status` and `public_repo` scopes
 2. Create Pipeline job `lmcache-rbln-poller` → Script Path: `.jenkins/Jenkinsfile.poller`
