@@ -1,0 +1,120 @@
+// Test job: triggered by lmcache-rbln-poller with a specific commit SHA.
+// Flow:
+//   1. Write 'pending' status to GitHub immediately
+//   2. Wait for a human to approve (RBLN team controls when tests actually run)
+//   3. Checkout the exact PR commit
+//   4. Run tests via run_tests.sh
+//   5. Parse result.json and write 'success' or 'failure' back to the PR
+
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'COMMIT_SHA', defaultValue: '', description: 'Exact git SHA to test')
+        string(name: 'PR_NUMBER',  defaultValue: '', description: 'GitHub PR number')
+        string(name: 'PR_TITLE',   defaultValue: '', description: 'PR title (for display)')
+    }
+
+    environment {
+        GITHUB_TOKEN   = credentials('github-pat')
+        GITHUB_REPO    = 'opendataio/LMCache'
+        STATUS_CONTEXT = 'jenkins/rbln'
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '50'))
+        timestamps()
+    }
+
+    stages {
+        stage('Pending') {
+            steps {
+                writeGithubStatus('pending', 'Waiting for RBLN approval...')
+            }
+        }
+
+        stage('Approval') {
+            steps {
+                script {
+                    def msg = "PR #${params.PR_NUMBER}: ${params.PR_TITLE}\nCommit: ${params.COMMIT_SHA}\n\nApprove to run tests."
+                    timeout(time: 24, unit: 'HOURS') {
+                        input message: msg, ok: 'Approve'
+                    }
+                }
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                cleanWs()
+                writeGithubStatus('pending', 'Checking out code...')
+                sh """
+                    git clone https://github.com/\${GITHUB_REPO}.git repo
+                    cd repo
+                    git checkout \${COMMIT_SHA}
+                    echo "Checked out: \$(git log -1 --oneline)"
+                """
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                writeGithubStatus('pending', 'Tests running...')
+                sh """
+                    cd repo
+                    bash .jenkins/run_tests.sh 2>&1 | tee \${WORKSPACE}/test_output.txt
+                """
+            }
+        }
+
+        stage('Parse Result') {
+            steps {
+                script {
+                    if (!fileExists('repo/result.json')) {
+                        error("result.json not found — run_tests.sh did not produce output")
+                    }
+                    def result = readJSON file: 'repo/result.json'
+                    echo "Result: ${result}"
+                    env.TEST_STATUS     = result.status
+                    env.TEST_DURATION   = result.duration_seconds.toString()
+                    env.TEST_CAPABILITY = result.capability
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            writeGithubStatus(
+                'success',
+                "Tests passed on ${env.TEST_CAPABILITY} in ${env.TEST_DURATION}s"
+            )
+        }
+        failure {
+            writeGithubStatus('failure', 'Tests failed — see logs for details')
+        }
+        aborted {
+            writeGithubStatus('failure', 'Build aborted or approval timed out')
+        }
+        always {
+            archiveArtifacts artifacts: 'test_output.txt, repo/result.json',
+                             allowEmptyArchive: true
+        }
+    }
+}
+
+def writeGithubStatus(String state, String description) {
+    sh """
+        curl -sf -X POST \
+          -H "Authorization: Bearer \${GITHUB_TOKEN}" \
+          -H "Accept: application/vnd.github+json" \
+          -H "Content-Type: application/json" \
+          "https://api.github.com/repos/\${GITHUB_REPO}/statuses/\${COMMIT_SHA}" \
+          -d '{
+            "state":       "${state}",
+            "context":     "\${STATUS_CONTEXT}",
+            "description": "${description}",
+            "target_url":  "\${BUILD_URL}"
+          }'
+    """
+}

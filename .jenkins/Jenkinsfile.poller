@@ -1,0 +1,95 @@
+// Poller job: runs on a cron schedule, polls GitHub for open PRs with the
+// 'rbln' label, and triggers lmcache-rbln-test for each new commit SHA.
+//
+// Jenkins setup:
+//   1. Store your GitHub PAT in Jenkins Credentials with ID 'github-pat'
+//   2. Create a Pipeline job named 'lmcache-rbln-poller' pointing to this file
+//   3. Create a Pipeline job named 'lmcache-rbln-test' pointing to Jenkinsfile.test
+
+pipeline {
+    agent any
+
+    triggers {
+        // Poll every 5 minutes; 'H' spreads load across the minute window
+        cron('H/5 * * * *')
+    }
+
+    environment {
+        GITHUB_TOKEN = credentials('github-pat')
+        GITHUB_REPO  = 'opendataio/LMCache'
+        TARGET_LABEL = 'rbln'
+        // File that records already-triggered SHAs to avoid duplicate runs
+        SEEN_FILE    = '/var/jenkins_home/rbln-seen-shas.txt'
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        disableConcurrentBuilds()
+        timestamps()
+    }
+
+    stages {
+        stage('Poll GitHub for rbln PRs') {
+            steps {
+                script {
+                    echo "Polling ${GITHUB_REPO} for open PRs labelled '${TARGET_LABEL}'..."
+
+                    // Fetch all open PRs (up to 100)
+                    def response = sh(
+                        script: """
+                            curl -sf \
+                              -H "Authorization: Bearer \${GITHUB_TOKEN}" \
+                              -H "Accept: application/vnd.github+json" \
+                              "https://api.github.com/repos/\${GITHUB_REPO}/pulls?state=open&per_page=100"
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    def prs = readJSON(text: response)
+                    echo "Found ${prs.size()} open PR(s) total."
+
+                    // Load the list of SHAs we have already triggered
+                    def seenShas = []
+                    if (fileExists(SEEN_FILE)) {
+                        seenShas = readFile(SEEN_FILE).trim().tokenize('\n').findAll { it }
+                    }
+
+                    int triggered = 0
+
+                    prs.each { pr ->
+                        // Filter by label
+                        def labelNames = pr.labels.collect { it.name as String }
+                        if (!labelNames.contains(TARGET_LABEL)) {
+                            return
+                        }
+
+                        def sha   = pr.head.sha as String
+                        def prNum = pr.number.toString()
+                        def title = pr.title as String
+
+                        if (seenShas.contains(sha)) {
+                            echo "PR #${prNum} SHA ${sha[0..6]} already triggered, skipping."
+                            return
+                        }
+
+                        echo "New: PR #${prNum} '${title}' @ ${sha[0..6]} — triggering test job."
+
+                        build job: 'lmcache-rbln-test',
+                              parameters: [
+                                  string(name: 'COMMIT_SHA', value: sha),
+                                  string(name: 'PR_NUMBER',  value: prNum),
+                                  string(name: 'PR_TITLE',   value: title)
+                              ],
+                              wait: false
+
+                        sh "echo '${sha}' >> '${SEEN_FILE}'"
+                        seenShas << sha
+                        triggered++
+                    }
+
+                    echo "Done. Triggered ${triggered} new test job(s)."
+                }
+            }
+        }
+    }
+}
