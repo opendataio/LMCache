@@ -1,6 +1,7 @@
 git
 workflow-aggregator
 pipeline-stage-view
+pipeline-graph-view
 pipeline-utility-steps
 ws-cleanup
 rebuild

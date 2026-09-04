@@ -100,6 +100,7 @@ Default credentials: `admin` / `admin`
 | Plugin | Purpose |
 |--------|---------|
 | `workflow-aggregator` | Core Pipeline support |
+| `pipeline-graph-view` | Pipeline stage graph overview |
 | `pipeline-utility-steps` | `readJSON`, `fileExists` |
 | `ws-cleanup` | `cleanWs()` |
 | `rebuild` | Re-run a build with same parameters |
