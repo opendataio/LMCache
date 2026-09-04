@@ -1,4 +1,4 @@
-# LMCache Jenkins CI — RBLN POC
+# LMCache Jenkins CI POC
 
 ## Background
 
