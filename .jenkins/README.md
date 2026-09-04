@@ -52,7 +52,7 @@ Use when Jenkins is on an internal network that GitHub cannot reach.
 1. Jenkins credential ID `GITHUB_PAT` — PAT with `repo:status` and `public_repo` scopes
 2. Create Pipeline job `lmcache-rbln-poller` → Script Path: `.jenkins/Jenkinsfile.poller`
 3. Create Pipeline job `lmcache-rbln-test` → Script Path: `.jenkins/Jenkinsfile.test`
-4. Install plugins: Pipeline Utility Steps, Workspace Cleanup
+4. Install plugins: Pipeline Utility Steps, Workspace Cleanup, Rebuild
 
 ### External Jenkins (webhook)
 
@@ -65,7 +65,7 @@ Use when Jenkins has a public URL and GitHub can push events directly.
 
 **Setup:**
 1. Same credential and `lmcache-rbln-test` job as above
-2. Install additional plugin: Generic Webhook Trigger
+2. Install additional plugins: Generic Webhook Trigger, Rebuild
 3. Create Pipeline job `lmcache-rbln-webhook` → Script Path: `.jenkins/Jenkinsfile.webhook`
 4. Add GitHub webhook on the repo:
    - Payload URL: `https://<jenkins-host>/generic-webhook-trigger/invoke?token=rbln-webhook-secret`
