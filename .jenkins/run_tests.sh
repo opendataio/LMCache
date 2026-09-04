@@ -22,15 +22,17 @@ echo "============================================"
 TEST_STATUS="passed"
 PYTEST_OUTPUT=$(mktemp)
 
-if python3 -m pytest tests/ \
-       -x -q \
-       --timeout=120 \
-       -m "not gpu" \
-       --tb=short 2>&1 | tee "${PYTEST_OUTPUT}"; then
-    TEST_STATUS="passed"
-else
-    TEST_STATUS="failed"
-fi
+# --- MOCK FAILURE (remove before production) ---
+cat > "${PYTEST_OUTPUT}" << 'MOCK'
+FAILED tests/v1/test_kv_cache_manager.py::test_allocate_block_out_of_memory
+FAILED tests/v1/test_kv_cache_manager.py::test_free_unallocated_block
+short test summary info
+FAILED tests/v1/test_kv_cache_manager.py::test_allocate_block_out_of_memory - AssertionError: expected KVCacheManager to raise RuntimeError but got None
+FAILED tests/v1/test_kv_cache_manager.py::test_free_unallocated_block - ValueError: block 42 is not allocated
+2 failed, 38 passed in 12.34s
+MOCK
+TEST_STATUS="failed"
+# --- END MOCK ---
 
 END=$(date +%s)
 DURATION=$(( END - START ))
