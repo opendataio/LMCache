@@ -21,7 +21,7 @@ This directory provides a POC implementation of that design.
     GitHub cannot push to it                GitHub can push to it
               │                                            │
     Jenkinsfile.poller                      Jenkinsfile.webhook
-    polls GitHub API every 5 min  ◄──────── receives webhook instantly
+    polls GitHub API every 5 min            receives webhook instantly
               │                                            │
               └─────────────────────┬──────────────────────┘
                                     │ trigger (with COMMIT_SHA, PR_NUMBER)
