@@ -13,11 +13,8 @@ jenkins:
     loggedInUsersCanDoAnything:
       allowAnonymousRead: false
 
-credentials:
-  system:
-    domainCredentials:
-      - credentials:
-          - string:
-              id: "GITHUB_PAT"
-              secret: "${GITHUB_PAT}"
-              description: "GitHub PAT for opendataio/LMCache"
+# Credentials are configured via Jenkins UI:
+# Manage Jenkins -> Credentials -> Add Credential
+#   Kind:   Secret text
+#   ID:     GITHUB_PAT
+#   Secret: <your GitHub PAT with repo:status and public_repo scopes>
