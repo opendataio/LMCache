@@ -12,7 +12,7 @@ GitHub PR labeled 'metax'
 lmcache-metax-webhook   ← receives event, extracts SHA
         │  (trigger)
         ▼
-lmcache-metax-test      ← approval gate → run tests → post result to PR
+lmcache-metax-test      → run tests → post result to PR
 ```
 
 ---
