@@ -5,7 +5,7 @@
 [Issue #4861](https://github.com/LMCache/LMCache/issues/4861) proposes a CI architecture
 that supports hardware-vendor-managed test infrastructure (e.g. RBLN accelerators).
 The core challenge: vendor machines live on internal networks, so GitHub Actions cannot
-reach them directly, and a human approval gate is required before tests actually run.
+reach them directly.
 
 This directory provides a POC implementation of that design.
 
@@ -27,8 +27,7 @@ Jenkinsfile.poller        Jenkinsfile.webhook
           lmcache-rbln-test
           (Jenkinsfile.test)
        ┌──────────────────────┐
-       │ approval → test      │
-       │ → report results     │
+       │ test → report results │
        └──────────┬───────────┘
                   │
            GitHub PR status
@@ -46,7 +45,7 @@ Use when Jenkins is on an internal network that GitHub cannot reach.
 | File | Role |
 |------|------|
 | `Jenkinsfile.poller` | Polls GitHub API every 5 min for PRs labelled `rbln`, triggers test job on new SHAs |
-| `Jenkinsfile.test` | Runs on triggered SHA: approval gate → checkout → tests → report |
+| `Jenkinsfile.test` | Runs on triggered SHA: checkout → tests → report |
 
 **Deduplication:** each triggered commit SHA is appended to
 `/var/jenkins_home/rbln-seen-shas.txt` on the Jenkins host. On every poll cycle the
@@ -127,7 +126,6 @@ To add a plugin: append it to `docker/plugins.txt` and rebuild the image.
 ## Current features
 
 - Label-based PR targeting (`rbln` label triggers the pipeline)
-- Human approval gate before tests run (24-hour timeout)
 - Commit status reported at each stage (`pending` → `success` / `failure`)
 - PR comment posted with test outcome, failed test names, and error summary
 - Deduplication via seen-SHA file (polling mode only)
@@ -135,7 +133,7 @@ To add a plugin: append it to `docker/plugins.txt` and rebuild the image.
 ## Validated
 
 End-to-end pipeline verified on [opendataio/LMCache#1](https://github.com/opendataio/LMCache/pull/1):
-poller detected the labelled PR, triggered the test job, approval flowed through,
+poller detected the labelled PR, triggered the test job,
 and results were posted back as both a commit status and a PR comment.
 
 ## Future extensions

@@ -10,10 +10,10 @@ set -euo pipefail
 
 START=$(date +%s)
 COMMIT=$(git rev-parse HEAD)
-CAPABILITY="${RBLN_CAPABILITY:-rbln-demo}"
+CAPABILITY="${METAX_CAPABILITY:-metax-demo}"
 
 echo "============================================"
-echo " LMCache RBLN test run"
+echo " LMCache MetaX test run"
 echo " Commit   : ${COMMIT}"
 echo " Capability: ${CAPABILITY}"
 echo " Started  : $(date -u +%Y-%m-%dT%H:%M:%SZ)"

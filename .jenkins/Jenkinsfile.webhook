@@ -1,12 +1,5 @@
-// External Jenkins: receives GitHub webhook, triggers lmcache-rbln-test (Jenkinsfile.test).
-// Replaces Jenkinsfile.poller when Jenkins has a public URL.
-//
-// Required plugin: Generic Webhook Trigger
-//
-// GitHub webhook setup (repo Settings -> Webhooks -> Add webhook):
-//   Payload URL:  https://<jenkins-host>/generic-webhook-trigger/invoke?token=rbln-webhook-secret
-//   Content type: application/json
-//   Events:       Pull requests
+// Receives GitHub webhook events and triggers lmcache-metax-test.
+// Setup: see docs/webhook-setup.md
 
 pipeline {
     agent any
@@ -21,9 +14,9 @@ pipeline {
                 [key: 'LABEL_NAME', value: '$.label.name'],
             ],
             causeString: 'PR #$PR_NUMBER - $ACTION $LABEL_NAME',
-            token: 'rbln-webhook-secret',
+            tokenCredentialId: 'metax-webhook-token',
             regexpFilterText:  '$ACTION__$LABEL_NAME',
-            regexpFilterExpression: 'labeled__rbln'
+            regexpFilterExpression: 'labeled__metax'
         )
     }
 
@@ -38,20 +31,18 @@ pipeline {
     }
 
     stages {
-        stage('Trigger RBLN test') {
+        stage('Trigger MetaX test') {
             steps {
                 script {
                     echo "Webhook received: PR #${env.PR_NUMBER} '${env.PR_TITLE}' @ ${env.COMMIT_SHA.take(7)}"
-                    // 'lmcache-rbln-test' is a Jenkins Pipeline job configured with
-                    // Script Path: .jenkins/Jenkinsfile.test
-                    build job: 'lmcache-rbln-test',
+                    build job: 'lmcache-metax-test',
                           parameters: [
                               string(name: 'COMMIT_SHA', value: env.COMMIT_SHA),
                               string(name: 'PR_NUMBER',  value: env.PR_NUMBER),
                               string(name: 'PR_TITLE',   value: env.PR_TITLE)
                           ],
                           wait: false
-                    echo "Triggered lmcache-rbln-test for PR #${env.PR_NUMBER}."
+                    echo "Triggered lmcache-metax-test for PR #${env.PR_NUMBER}."
                 }
             }
         }

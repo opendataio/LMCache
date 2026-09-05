@@ -1,5 +1,5 @@
-// Test job: triggered by lmcache-rbln-poller (internal) or lmcache-rbln-webhook (external).
-// Requires human approval, then checks out the PR commit, runs tests, and posts results to GitHub.
+// Test job: triggered by lmcache-metax-webhook.
+// Checks out the PR commit, runs tests, and posts results to GitHub.
 
 pipeline {
     agent any
@@ -13,7 +13,7 @@ pipeline {
     environment {
         GITHUB_TOKEN   = credentials('GITHUB_PAT')
         GITHUB_REPO    = 'opendataio/LMCache'
-        STATUS_CONTEXT = 'jenkins/rbln'
+        STATUS_CONTEXT = 'jenkins/metax'
     }
 
     options {
@@ -21,23 +21,6 @@ pipeline {
     }
 
     stages {
-        stage('Pending') {
-            steps {
-                writeGithubStatus('pending', 'Waiting for RBLN approval...')
-            }
-        }
-
-        stage('Approval') {
-            steps {
-                script {
-                    def msg = "PR #${params.PR_NUMBER}: ${params.PR_TITLE}\nCommit: ${params.COMMIT_SHA}\n\nApprove to run tests."
-                    timeout(time: 24, unit: 'HOURS') {
-                        input message: msg, ok: 'Approve'
-                    }
-                }
-            }
-        }
-
         stage('Checkout') {
             steps {
                 cleanWs()
@@ -86,9 +69,8 @@ pipeline {
                 'success',
                 "Tests passed on ${env.TEST_CAPABILITY} in ${env.TEST_DURATION}s"
             )
-            postPrComment(""":white_check_mark: **RBLN tests passed**
+            postPrComment(""":white_check_mark: **MetaX tests passed**
 - Capability: `${env.TEST_CAPABILITY}`
-- Workload: smoke
 - Duration: ${env.TEST_DURATION}s""")
         }
         failure {
@@ -96,13 +78,12 @@ pipeline {
             script {
                 def failedList = env.TEST_FAILED_TESTS ? "\n**Failed tests:**\n```\n${env.TEST_FAILED_TESTS}\n```" : ''
                 def errSummary = env.TEST_ERROR_SUMMARY ? "\n**Error summary:**\n```\n${env.TEST_ERROR_SUMMARY}\n```" : ''
-                postPrComment(""":x: **RBLN tests failed**${failedList}${errSummary}
-Contact the RBLN team for full logs.""")
+                postPrComment(""":x: **MetaX tests failed**${failedList}${errSummary}""")
             }
         }
         aborted {
-            writeGithubStatus('failure', 'Build aborted or approval timed out')
-            postPrComment(""":warning: **RBLN tests aborted or approval timed out**""")
+            writeGithubStatus('failure', 'Build aborted')
+            postPrComment(""":warning: **MetaX tests aborted**""")
         }
         always {
             archiveArtifacts artifacts: 'test_output.txt, repo/result.json',
