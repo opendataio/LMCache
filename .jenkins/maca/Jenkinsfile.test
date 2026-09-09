@@ -4,7 +4,29 @@
 // collide with other vendors' copies of the shared webhook/test pattern.
 
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            cloud 'ci-kubernets'
+            inheritFrom 'ci-lmcache'
+            yaml """
+            metadata:
+              namespace: ci
+            spec:
+              containers:
+              - name: jnlp
+                image: harbor-jiajia.mxcr.io/github-runner/vllm-metax:0.25.0-maca.ai3.8.2.108-torch2.10-py310-ubuntu22.04-amd64
+                resources:
+                  requests:
+                    memory: "256Gi"
+                    cpu: 32
+                    metax-tech.com/gpu: 2
+                  limits:
+                    memory: "256Gi"
+                    cpu: 32
+                    metax-tech.com/gpu: 2
+            """
+        }
+    }
 
     parameters {
         string(name: 'COMMIT_SHA', defaultValue: '', description: 'Exact git SHA to test')
