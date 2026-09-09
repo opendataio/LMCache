@@ -41,7 +41,7 @@ pipeline {
                               "No webhook payload found: COMMIT_SHA/PR_NUMBER are empty.")
                     }
                     echo "Webhook received: PR #${env.PR_NUMBER} '${env.PR_TITLE}' @ ${env.COMMIT_SHA.take(7)}"
-                    build job: 'lmcache-maca-test',
+                    build job: 'lmcache-maca-ci',
                           parameters: [
                               string(name: 'COMMIT_SHA', value: env.COMMIT_SHA),
                               string(name: 'PR_NUMBER',  value: env.PR_NUMBER),
