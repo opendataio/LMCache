@@ -145,6 +145,7 @@ def writeGithubStatus(String state, String description) {
     def statusContext = env.STATUS_CONTEXT ?: ''
     writeFile file: 'status_payload.json', text: groovy.json.JsonOutput.toJson([
         state: state, context: statusContext, description: description
+        target_url: "${env.BUILD_URL}console"
     ])
     sh """
         curl -sf -X POST \
