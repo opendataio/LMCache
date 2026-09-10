@@ -2,7 +2,7 @@
 // Checks out the PR commit, runs tests, and posts results to GitHub.
 // MetaX MACA variant — kept in its own maca/ subdirectory so it doesn't
 // collide with other vendors' copies of the shared webhook/test pattern.
-// 
+//
 
 pipeline {
     agent {
