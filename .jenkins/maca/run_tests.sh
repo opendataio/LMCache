@@ -19,6 +19,25 @@ echo " Capability: ${CAPABILITY}"
 echo " Started  : $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo "============================================"
 
+echo "--- environment ---"
+echo "MACA_PATH=${MACA_PATH:-<unset>}"
+which python3; python3 --version
+which pip
+python3 -c "import torch; print('torch', torch.__version__, 'cuda available:', torch.cuda.is_available())" || true
+echo "-------------------"
+
+# MACA SDK env (cu-bridge nvcc-compatible compiler + runtime libs).
+# Only fall back to /opt/maca if the image hasn't already set MACA_PATH.
+export MACA_PATH="${MACA_PATH:-/opt/maca}"
+export CUCC_PATH="${MACA_PATH}/tools/cu-bridge"
+export PATH="${CUCC_PATH}/bin:${CUCC_PATH}/tools:${MACA_PATH}/mxgpu_llvm/bin:${MACA_PATH}/bin:${PATH}"
+export LD_LIBRARY_PATH="${MACA_PATH}/lib:${MACA_PATH}/mxgpu_llvm/lib:${MACA_PATH}/ompi/lib:${LD_LIBRARY_PATH:-}"
+
+
+# Compile & install LMCache itself with MACA support, against the
+# already-installed torch/MACA toolchain baked into this image.
+BUILD_WITH_MACA=1 pip install -e . --no-build-isolation
+
 TEST_STATUS="passed"
 PYTEST_OUTPUT=$(mktemp)
 
