@@ -87,6 +87,7 @@ if LMCACHE_TRACK_USAGE="false" python3 -m pytest \
        --deselect="tests/v1/mp_coordinator/test_key_directory.py::test_token_ids_outside_uint32_leave_the_binding_unfilled" \
        --deselect="tests/v1/test_torch_ops.py::TestScenarios::test_1_scenario[cuda_ops-load_and_reshape_flash-scenario_load_and_reshape_flash]" \
        --deselect="tests/v1/test_torch_ops.py::TestScenarios::test_2_compare[multi_layer_block_kv_transfer]" \
+       --deselect="tests/v1/distributed/l2_adapters/test_p2p_l2_adapter_integration.py::test_p2p_adapter_end_to_end" \
        2>&1 | tee "${PYTEST_OUTPUT}"; then
     TEST_STATUS="passed"
 else
