@@ -51,10 +51,15 @@ pipeline {
                 cleanWs()
                 writeGithubStatus('pending', 'Checking out code...')
                 sh """
-                    sed -i.bak \
-                      -e 's@http.*com/ubuntu@http://repo.metax-tech.com/r/ubuntu@g' \
-                      -e 's@http.*cn/ubuntu@http://repo.metax-tech.com/r/ubuntu@g' \
-                      /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources
+                    for f in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
+                        if [ -f "\$f" ]; then
+                            sed -i.bak \
+                              -e 's@http.*com/ubuntu@http://repo.metax-tech.com/r/ubuntu@g' \
+                              -e 's@http.*cn/ubuntu@http://repo.metax-tech.com/r/ubuntu@g' \
+                              "\$f"
+                        fi
+                    done
+
                     apt-get update -qq
                     apt-get install -y -qq git
 
