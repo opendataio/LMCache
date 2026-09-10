@@ -42,6 +42,7 @@ pipeline {
 
     options {
         buildDiscarder(logRotator(numToKeepStr: '50'))
+        skipDefaultCheckout(true)
     }
 
     stages {
@@ -50,6 +51,13 @@ pipeline {
                 cleanWs()
                 writeGithubStatus('pending', 'Checking out code...')
                 sh """
+                    sed -i.bak \
+                      -e 's@http.*com/ubuntu@http://repo.metax-tech.com/r/ubuntu@g' \
+                      -e 's@http.*cn/ubuntu@http://repo.metax-tech.com/r/ubuntu@g' \
+                      /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources
+                    apt-get update -qq
+                    apt-get install -y -qq git
+
                     git clone https://github.com/\${GITHUB_REPO}.git repo
                     cd repo
                     git checkout \${COMMIT_SHA}
