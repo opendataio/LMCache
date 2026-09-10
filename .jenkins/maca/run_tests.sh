@@ -33,7 +33,8 @@ export CUCC_PATH="${MACA_PATH}/tools/cu-bridge"
 export PATH="${CUCC_PATH}/bin:${CUCC_PATH}/tools:${MACA_PATH}/mxgpu_llvm/bin:${MACA_PATH}/bin:${PATH}"
 export LD_LIBRARY_PATH="${MACA_PATH}/lib:${MACA_PATH}/mxgpu_llvm/lib:${MACA_PATH}/ompi/lib:${LD_LIBRARY_PATH:-}"
 
-pip install pytest-timeout
+pip install -r requirements/test.txt
+pip install pytest-timeout pytest-asyncio pytest-benchmark
 # Compile & install LMCache itself with MACA support, against the
 # already-installed torch/MACA toolchain baked into this image.
 BUILD_WITH_MACA=1 pip install -e . --no-build-isolation
@@ -42,7 +43,7 @@ TEST_STATUS="passed"
 PYTEST_OUTPUT=$(mktemp)
 
 if python3 -m pytest tests/ \
-       -x -q \
+       -q \
        --timeout=120 \
        -m "not gpu" \
        --tb=short 2>&1 | tee "${PYTEST_OUTPUT}"; then
