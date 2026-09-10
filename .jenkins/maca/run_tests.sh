@@ -2,6 +2,8 @@
 # Test entry point called by Jenkinsfile.test (MetaX MACA variant).
 # Writes result.json in the result contract format when done.
 #
+# (trivial change to give this branch a diff against dev, so it can be used
+# as a PR-labeled test vehicle that actually contains this file's tree.)
 # Exit code:
 #   0  all tests passed
 #   1  one or more tests failed
